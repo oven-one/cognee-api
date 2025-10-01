@@ -1,5 +1,5 @@
 {
-  "name": "@lineai/memory",
+  "name": "@lineai/cognee-api",
   "version": "1.0.0",
   "description": "A simple library for the Cognee API",
   "main": "build/main/index.js",

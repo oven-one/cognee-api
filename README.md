@@ -5,15 +5,15 @@ A functional TypeScript client library for the Cognee API. This library provides
 ## Installation
 
 ```bash
-npm install @lineai/memory
+npm install @lineai/cognee-api
 # or
-yarn add @lineai/memory
+yarn add @lineai/cognee-api
 ```
 
 ## Quick Start
 
 ```typescript
-import { CogneeConfig, login, addData, cognify, search, SearchType } from '@lineai/memory';
+import { CogneeConfig, login, addData, cognify, search, SearchType } from '@lineai/cognee-api';
 
 // Configure the client
 const config: CogneeConfig = {
