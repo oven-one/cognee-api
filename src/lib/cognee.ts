@@ -28,6 +28,7 @@ import {
   ResetPasswordRequest,
   ResponseBody,
   ResponseRequest,
+  RoleRead,
   RunCodeData,
   SearchHistoryItem,
   SearchRequest,
@@ -484,6 +485,15 @@ export const createRole = async (
   const params = new URLSearchParams({ role_name: roleName });
   return fetchWithConfig(config, `/permissions/roles?${params.toString()}`, {
     method: 'POST',
+  });
+};
+
+export const getRoleByName = async (
+  config: CogneeConfig,
+  roleName: string
+): Promise<RoleRead> => {
+  return fetchWithConfig(config, `/permissions/roles/${encodeURIComponent(roleName)}`, {
+    method: 'GET',
   });
 };
 

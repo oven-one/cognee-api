@@ -182,6 +182,12 @@ export type CreateTenantRequest = {
   readonly tenant_name: string;
 };
 
+export type RoleRead = {
+  readonly id: UUID;
+  readonly name: string;
+  readonly tenant_id: UUID;
+};
+
 export type SyncRequest = {
   readonly dataset_ids?: readonly UUID[];
 };
