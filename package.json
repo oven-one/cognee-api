@@ -1,6 +1,6 @@
 {
   "name": "@lineai/cognee-api",
-  "version": "1.0.2",
+  "version": "1.0.14",
   "description": "A simple library for the Cognee API",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
