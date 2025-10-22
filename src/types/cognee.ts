@@ -76,12 +76,13 @@ export type DatasetDTO = {
 export type DataDTO = {
   readonly id: UUID;
   readonly name: string;
-  readonly created_at: DateTime;
-  readonly updated_at: DateTime;
+  readonly createdAt: DateTime;
+  readonly updatedAt: DateTime;
   readonly extension: string;
-  readonly mime_type: string;
-  readonly raw_data_location: string;
-  readonly dataset_id: UUID;
+  readonly mimeType: string;
+  readonly rawDataLocation: string;
+  readonly datasetId: UUID;
+  readonly nodeSet?: readonly string[];
 };
 
 export type GraphNode = {
@@ -125,15 +126,15 @@ export type CreateDatasetRequest = {
 
 export type SearchRequest = {
   readonly query: string;
-  readonly search_type?: SearchType;
+  readonly searchType?: SearchType;
   readonly datasets?: readonly string[];
-  readonly dataset_ids?: readonly UUID[];
-  readonly dataset_name?: string;
-  readonly system_prompt?: string;
-  readonly node_name?: readonly string[];
-  readonly top_k?: number;
-  readonly only_context?: boolean;
-  readonly use_combined_context?: boolean;
+  readonly datasetIds?: readonly UUID[];
+  readonly datasetName?: string;
+  readonly systemPrompt?: string;
+  readonly nodeName?: readonly string[];
+  readonly topK?: number;
+  readonly onlyContext?: boolean;
+  readonly useCombinedContext?: boolean;
 };
 
 export type LoginRequest = {

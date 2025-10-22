@@ -58,20 +58,6 @@ export type CogneeConfig = {
 // HTTP Helper
 // ============================================================================
 
-const createHeaders = (config: CogneeConfig, isFormData = false): HeadersInit => {
-  const headers: HeadersInit = {};
-
-  if (!isFormData) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (config.apiKey) {
-    headers['X-Api-Key'] = config.apiKey;
-  }
-
-  return headers;
-};
-
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({ message: response.statusText })) as CogneeErrorResponse;
@@ -96,15 +82,23 @@ const fetchWithConfig = async <T>(
   options: RequestInit = {}
 ): Promise<T> => {
   const url = `${config.baseUrl}/api/v1${path}`;
-  const isFormData = options.body instanceof FormData;
+
+  const headers: HeadersInit = { ...options.headers };
+
+  // Add API key if configured
+  if (config.apiKey) {
+    headers['X-Api-Key'] = config.apiKey;
+  }
+
+  // Add auth token if configured (for server-side usage)
+  if (config.authToken) {
+    headers['Authorization'] = `Bearer ${config.authToken}`;
+  }
 
   const response = await fetch(url, {
     ...options,
-    headers: {
-      ...createHeaders(config, isFormData),
-      ...options.headers,
-    },
-    credentials: 'include', // Include cookies for auth_token
+    headers,
+    credentials: 'include', // Include cookies for auth_token (browser only)
   });
 
   return handleResponse<T>(response);
@@ -117,7 +111,7 @@ const fetchWithConfig = async <T>(
 export const login = async (
   config: CogneeConfig,
   credentials: LoginRequest
-): Promise<void> => {
+): Promise<{ access_token: string; token_type: string }> => {
   const formData = new URLSearchParams();
   formData.append('username', credentials.username);
   formData.append('password', credentials.password);
@@ -143,6 +137,9 @@ export const register = async (
 ): Promise<UserRead> => {
   return fetchWithConfig(config, '/auth/register', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
@@ -153,6 +150,9 @@ export const forgotPassword = async (
 ): Promise<void> => {
   return fetchWithConfig(config, '/auth/forgot-password', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
@@ -163,6 +163,9 @@ export const resetPassword = async (
 ): Promise<void> => {
   return fetchWithConfig(config, '/auth/reset-password', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
@@ -173,6 +176,9 @@ export const requestVerifyToken = async (
 ): Promise<void> => {
   return fetchWithConfig(config, '/auth/request-verify-token', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
@@ -183,13 +189,19 @@ export const verify = async (
 ): Promise<UserRead> => {
   return fetchWithConfig(config, '/auth/verify', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
 
 export const getCurrentUser = async (config: CogneeConfig): Promise<UserRead> => {
-  return fetchWithConfig(config, '/auth/me', {
+  return fetchWithConfig(config, '/users/me', {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -216,6 +228,8 @@ export const addData = async (
     formData.append('datasetId', request.datasetId);
   }
 
+  console.log("Node set", request.node_set);
+
   if (request.node_set) {
     request.node_set.forEach((nodeSet) => {
       formData.append('node_set', nodeSet);
@@ -238,6 +252,9 @@ export const cognify = async (
 ): Promise<CognifyResponse> => {
   return fetchWithConfig(config, '/cognify', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(request),
   });
 };
@@ -248,6 +265,9 @@ export const codeIndex = async (
 ): Promise<void> => {
   return fetchWithConfig(config, '/code-pipeline/index', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(request),
   });
 };
@@ -258,6 +278,9 @@ export const codeRetrieve = async (
 ): Promise<readonly Record<string, unknown>[]> => {
   return fetchWithConfig(config, '/code-pipeline/retrieve', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(request),
   });
 };
@@ -269,6 +292,9 @@ export const codeRetrieve = async (
 export const getDatasets = async (config: CogneeConfig): Promise<readonly DatasetDTO[]> => {
   return fetchWithConfig(config, '/datasets', {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -278,6 +304,9 @@ export const createDataset = async (
 ): Promise<DatasetDTO> => {
   return fetchWithConfig(config, '/datasets', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(request),
   });
 };
@@ -297,6 +326,9 @@ export const getDatasetGraph = async (
 ): Promise<GraphDTO> => {
   return fetchWithConfig(config, `/datasets/${datasetId}/graph`, {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -306,6 +338,9 @@ export const getDatasetData = async (
 ): Promise<readonly DataDTO[]> => {
   return fetchWithConfig(config, `/datasets/${datasetId}/data`, {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -318,6 +353,9 @@ export const getDatasetStatus = async (
 
   return fetchWithConfig(config, `/datasets/status?${params.toString()}`, {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -337,10 +375,16 @@ export const getRawDataFile = async (
   dataId: UUID
 ): Promise<Blob> => {
   const url = `${config.baseUrl}/api/v1/datasets/${datasetId}/data/${dataId}/raw`;
+
+  const headers: HeadersInit = {};
+  if (config.apiKey) {
+    headers['X-Api-Key'] = config.apiKey;
+  }
+
   const response = await fetch(url, {
     method: 'GET',
     credentials: 'include',
-    headers: createHeaders(config),
+    headers,
   });
 
   if (!response.ok) {
@@ -360,6 +404,9 @@ export const search = async (
 ): Promise<readonly SearchResult[]> => {
   return fetchWithConfig(config, '/search', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(request),
   });
 };
@@ -369,6 +416,9 @@ export const getSearchHistory = async (
 ): Promise<readonly SearchHistoryItem[]> => {
   return fetchWithConfig(config, '/search', {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -382,6 +432,9 @@ export const memify = async (
 ): Promise<unknown> => {
   return fetchWithConfig(config, '/memify', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(request),
   });
 };
@@ -393,6 +446,9 @@ export const memify = async (
 export const getSettings = async (config: CogneeConfig): Promise<SettingsDTO> => {
   return fetchWithConfig(config, '/settings', {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -402,6 +458,9 @@ export const saveSettings = async (
 ): Promise<void> => {
   return fetchWithConfig(config, '/settings', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(request),
   });
 };
@@ -416,6 +475,9 @@ export const sync = async (
 ): Promise<Record<string, SyncResponse>> => {
   return fetchWithConfig(config, '/sync', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(request),
   });
 };
@@ -423,6 +485,9 @@ export const sync = async (
 export const getSyncStatus = async (config: CogneeConfig): Promise<SyncStatusOverview> => {
   return fetchWithConfig(config, '/sync/status', {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -458,6 +523,9 @@ export const visualizeDataset = async (
   const params = new URLSearchParams({ dataset_id: datasetId });
   return fetchWithConfig(config, `/visualize?${params.toString()}`, {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -474,6 +542,9 @@ export const grantDatasetPermissions = async (
   const params = new URLSearchParams({ permission_name: permissionName });
   return fetchWithConfig(config, `/permissions/datasets/${principalId}?${params.toString()}`, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(datasetIds),
   });
 };
@@ -494,6 +565,9 @@ export const getRoleByName = async (
 ): Promise<RoleRead> => {
   return fetchWithConfig(config, `/permissions/roles/${encodeURIComponent(roleName)}`, {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -539,6 +613,9 @@ export const updateCurrentUser = async (
 ): Promise<UserRead> => {
   return fetchWithConfig(config, '/users/me', {
     method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
@@ -549,6 +626,9 @@ export const getUser = async (
 ): Promise<UserRead> => {
   return fetchWithConfig(config, `/users/${userId}`, {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -559,6 +639,9 @@ export const updateUser = async (
 ): Promise<UserRead> => {
   return fetchWithConfig(config, `/users/${userId}`, {
     method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
@@ -579,6 +662,9 @@ export const deleteUser = async (
 export const getNotebooks = async (config: CogneeConfig): Promise<unknown> => {
   return fetchWithConfig(config, '/notebooks', {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    }
   });
 };
 
@@ -588,6 +674,9 @@ export const createNotebook = async (
 ): Promise<unknown> => {
   return fetchWithConfig(config, '/notebooks', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
@@ -599,6 +688,9 @@ export const updateNotebook = async (
 ): Promise<unknown> => {
   return fetchWithConfig(config, `/notebooks/${notebookId}`, {
     method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
@@ -620,6 +712,9 @@ export const runNotebookCell = async (
 ): Promise<unknown> => {
   return fetchWithConfig(config, `/notebooks/${notebookId}/${cellId}/run`, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(data),
   });
 };
@@ -634,6 +729,9 @@ export const createResponse = async (
 ): Promise<ResponseBody> => {
   return fetchWithConfig(config, '/responses/', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(request),
   });
 };
@@ -646,6 +744,9 @@ export const getRoot = async (config: CogneeConfig): Promise<unknown> => {
   const url = `${config.baseUrl}/`;
   const response = await fetch(url, {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
     credentials: 'include',
   });
   return handleResponse<unknown>(response);
@@ -655,6 +756,9 @@ export const healthCheck = async (config: CogneeConfig): Promise<HealthResponse>
   const url = `${config.baseUrl}/health`;
   const response = await fetch(url, {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
     credentials: 'include',
   });
   return handleResponse<HealthResponse>(response);
@@ -666,6 +770,9 @@ export const detailedHealthCheck = async (
   const url = `${config.baseUrl}/health/detailed`;
   const response = await fetch(url, {
     method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
     credentials: 'include',
   });
   return handleResponse<DetailedHealthResponse>(response);
@@ -678,3 +785,4 @@ export const checkConnection = async (
     method: 'POST',
   });
 };
+
